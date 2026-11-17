@@ -1,0 +1,13 @@
+services:
+  prompthole:
+    build: .
+    image: prompthole:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8787:8787"   # loopback only. Do not change to 8787:8787 unless you understand the risk.
+    volumes:
+      - prompthole-data:/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # reach LM Studio / Ollama on your machine: set the upstream URL to http://host.docker.internal:1234
+volumes:
+  prompthole-data:

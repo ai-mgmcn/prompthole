@@ -1,0 +1,7 @@
+[
+  { "id": "private-key", "name": "Private key", "type": "regex", "pattern": "-----BEGIN (?:[A-Z]+ )?PRIVATE KEY-----[\\s\\S]*?(?:-----END (?:[A-Z]+ )?PRIVATE KEY-----|$)", "mode": "block", "enabled": true },
+  { "id": "aws-key", "name": "AWS access key", "type": "regex", "pattern": "\\b(?:AKIA|ASIA)[0-9A-Z]{16}\\b", "mode": "mask", "enabled": true },
+  { "id": "github-token", "name": "GitHub token", "type": "regex", "pattern": "\\bgh[pousr]_[A-Za-z0-9]{36,}\\b", "mode": "mask", "enabled": true },
+  { "id": "api-key", "name": "API key (sk-…)", "type": "regex", "pattern": "\\bsk-(?:ant-)?[A-Za-z0-9_\\-]{20,}\\b", "mode": "mask", "enabled": true },
+  { "id": "jwt", "name": "JWT", "type": "regex", "pattern": "\\beyJ[A-Za-z0-9_-]{10,}\\.[A-Za-z0-9_-]{10,}\\.[A-Za-z0-9_-]{10,}\\b", "mode": "log", "enabled": true }
+]

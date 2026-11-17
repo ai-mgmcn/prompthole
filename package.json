@@ -1,0 +1,33 @@
+{
+  "name": "prompthole",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test test/*.test.mjs",
+    "test:coverage": "node --test --experimental-test-coverage --test-coverage-lines=95 test/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@anthropic-ai/sdk": "^1.9.0",
+    "@google/genai": "^3.4.0",
+    "openai": "^7.57.0"
+  },
+  "description": "PromptHole — the Pi-hole for AI. A gateway that shows and controls every request your tools send to AI.",
+  "license": "MIT",
+  "keywords": [
+    "ai",
+    "llm",
+    "gateway",
+    "proxy",
+    "secrets",
+    "dlp",
+    "claude-code",
+    "openai",
+    "security",
+    "privacy"
+  ]
+}

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PromptHole</title>
+<link rel="stylesheet" href="/css/app.css">
+</head><body>
+<div class="app">
+<aside>
+  <div class="brand"><div class="logo">P</div><b>PromptHole</b><button class="btn i tog" id="sbT" title="Collapse / expand sidebar"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.500 5.500 8l4.500 4.500"/></svg></button></div>
+  <nav id="tabs">
+    <button data-t="over" class="on"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg><span class="lb">Overview</span></button>
+    <button data-t="log"><svg viewBox="0 0 16 16"><path d="M2 4h12M2 8h12M2 12h8"/></svg><span class="lb">Requests</span></button>
+    <button data-t="commands"><svg viewBox="0 0 16 16"><path d="M2.500 4 6.500 8l-4 4M8 12.500h5.500"/></svg><span class="lb">Commands</span></button>
+    <button data-t="rules"><svg viewBox="0 0 16 16"><path d="M8 1.5 13.5 4v4c0 3-2.3 5.2-5.5 6.5C4.800 13.200 2.500 11 2.500 8V4z"/></svg><span class="lb">Rules</span></button>
+    <button data-t="clients"><svg viewBox="0 0 16 16"><circle cx="8" cy="5.500" r="2.500"/><path d="M3 13.500c.5-2.500 2.500-3.800 5-3.800s4.500 1.300 5 3.800"/></svg><span class="lb">Clients</span></button>
+    <button data-t="setup"><svg viewBox="0 0 16 16"><path d="M2 5h8M12 5h2M2 11h2M6 11h8"/><circle cx="11" cy="5" r="1.500"/><circle cx="5" cy="11" r="1.500"/></svg><span class="lb">Setup</span></button>
+  </nav>
+  <div class="side-foot"><span class="dot" title="Listening on 127.0.0.1 only"></span><span class="lb">127.0.0.1 only</span></div>
+</aside>
+<main>
+  <div class="top"><h2 id="title">Overview</h2><span class="sub" id="stamp"></span></div>
+
+  <section id="over">
+    <div class="grid g5" id="kpis"></div>
+    <div class="grid g21" style="margin-top:12px">
+      <div class="card"><div class="ct"><span>Requests · last 60 min</span><span class="faint" id="legend"></span></div><svg id="chart" width="100%" height="120" preserveAspectRatio="none"></svg></div>
+      <div class="card"><div class="ct"><span>Top rules hit</span></div><div id="rulesHit"></div></div>
+    </div>
+    <div class="grid g3" style="margin-top:12px">
+      <div class="card"><div class="ct"><span>By tool</span></div><div id="tools"></div></div>
+      <div class="card"><div class="ct"><span>By provider</span></div><div id="provs"></div></div>
+      <div class="card"><div class="ct"><span>By model</span></div><div id="models"></div></div>
+    </div>
+    <div class="grid g2" style="margin-top:12px">
+      <div class="card"><div class="ct"><span>Tokens by model</span><span class="faint">in + out</span></div><div id="tokModels"></div></div>
+      <div class="card"><div class="ct"><span>Tokens by tool</span><span class="faint">in + out</span></div><div id="tokTools"></div></div>
+    </div>
+  </section>
+
+  <section id="log" class="hide"><div class="card flush">
+    <table><thead><tr><th>Time</th><th>Tool</th><th>Model</th><th>Action</th><th>Matched</th><th>Status</th><th style="text-align:right">Tokens in / out</th><th style="text-align:right">Size</th><th style="text-align:right">ms</th></tr></thead><tbody id="ev"></tbody></table>
+    <div id="evEmpty" class="empty hide">No requests yet — point a tool at PromptHole (Setup).</div></div></section>
+
+  <section id="commands" class="hide">
+    <div class="card" style="margin-bottom:12px"><div style="display:flex;align-items:center;gap:12px"><div class="sw" id="swInspect"></div><div style="flex:1"><b style="font-weight:500">Inspect tool calls in model responses</b><div class="sub">Lets PromptHole see the commands a model asks your tool to run, and swap blocked ones for a text note so they never execute. Covers Anthropic Messages and OpenAI Chat Completions; OpenAI Responses and Gemini are not inspected yet.</div></div></div></div>
+    <div class="card flush" style="margin-bottom:12px"><div id="bf"></div><div class="list" id="cc"></div></div>
+    <div class="ct" style="margin:16px 2px 8px"><span>Command rules</span></div>
+    <div class="card flush">
+      <div class="formbar"><div class="form" style="grid-template-columns:1.2fr 110px 130px 2fr 90px auto"><input id="trName" placeholder="Name"><input id="trTool" class="mono" value="*" placeholder="tool or *"><select id="trMatch"><option value="prefix">starts with</option><option value="exact">exact command</option><option value="contains">contains</option><option value="regex">regex</option></select><input id="trPat" class="mono" placeholder="Pattern"><select id="trAction"><option value="block">block</option><option value="flag">flag</option></select><button class="btn p" id="trAdd">Add rule</button></div><div class="err" id="trErr"></div></div>
+      <div class="list" id="tl"></div></div>
+  </section>
+
+  <section id="rules" class="hide">
+    <div class="card" style="margin-bottom:12px"><div style="display:flex;align-items:center;gap:12px"><div class="sw" id="swKeep"></div><div style="flex:1"><b style="font-weight:500">Keep the matched text in logs</b><div class="sub">Stores the exact text that was caught, plus a little context, so you can see what leaked. Hidden until you click Reveal. Local file, owner-readable only.</div></div><button class="btn" id="purge">Purge stored text</button></div><div class="sub" id="purgeMsg" style="margin-top:6px"></div></div>
+    <div style="display:flex;gap:8px;margin-bottom:12px"><input id="rQ" placeholder="Search rules…" style="flex:1"><button class="btn p" id="rImp">Import rules</button></div>
+    <div class="card hide" id="imp" style="margin-bottom:12px">
+      <div class="ct"><span>Import rules in bulk</span><button class="btn i" id="impX" style="margin-top:-8px">✕</button></div>
+      <div class="form" style="grid-template-columns:1fr auto auto">
+        <select id="iSrc">
+          <option value="gitleaks">Gitleaks — 220+ API key &amp; token patterns (MIT)</option>
+          <option value="secrets-db">Secrets Patterns DB — ~880 patterns (CC-BY-SA-4.0)</option>
+          <option value="list">Paste a list of keywords / secrets</option>
+          <option value="env">Paste a .env file (its values become rules)</option>
+        </select>
+        <label class="chip hide" id="iLowWrap" title="Includes ~730 low-confidence patterns that produce many false positives"><input type="checkbox" id="iLow">include low-confidence</label>
+        <button class="btn p" id="iPrev">Preview</button>
+      </div>
+      <div id="iPaste" class="hide" style="margin-top:8px"><textarea id="iText" spellcheck="false" placeholder=""></textarea><div style="display:flex;gap:10px;align-items:center;margin-top:6px"><input type="file" id="iFile" style="height:auto;padding:4px"><span class="sub" id="iHint"></span></div></div>
+      <div id="iOut" style="margin-top:12px"></div>
+    </div>
+    <div class="card flush">
+    <div class="formbar"><div class="form" style="grid-template-columns:1.2fr 100px 2fr 100px auto"><input id="nName" placeholder="Name"><select id="nType"><option value="keyword">Keyword</option><option value="regex">Regex</option></select><input id="nPat" class="mono" placeholder="Pattern"><select id="nMode"><option value="mask">Mask</option><option value="block">Block</option><option value="log">Log only</option></select><button class="btn p" id="add">Add rule</button></div><div class="err" id="rErr"></div></div>
+    <div class="list" id="rl"></div></div>
+    <div class="card" style="margin-top:12px"><div class="ct"><span>Test text</span></div>
+      <div class="form" style="grid-template-columns:1fr auto"><input id="tt" class="mono" placeholder="Paste text to see what the rules would do…"><button class="btn" id="tb">Run test</button></div><pre id="tr" style="margin-top:10px"></pre></div></section>
+
+  <section id="clients" class="hide">
+    <div class="sub" style="margin-bottom:10px">How PromptHole decides which tool sent a request. Rules run top to bottom; the first match wins.</div>
+    <div class="card flush">
+      <div class="formbar"><div class="form" style="grid-template-columns:1fr 150px 1.6fr auto"><input id="cName" placeholder="Tool name (e.g. My script)"><input id="cHdr" class="mono" value="user-agent" placeholder="header"><input id="cPat" class="mono" placeholder="regex, e.g. ^myscript/"><button class="btn p" id="cAdd">Add</button></div><div class="err" id="cErr"></div></div>
+      <div class="list" id="cl"></div></div>
+    <div class="card flush" style="margin-top:12px"><div class="ct" style="padding:14px 14px 0;margin:0">Recently seen</div><div class="list" id="seen"></div></div>
+  </section>
+
+  <section id="setup" class="hide">
+    <div class="card flush">
+      <div class="formbar"><div class="form" style="grid-template-columns:1.1fr .8fr 1.6fr 1fr 70px 130px auto"><input id="uLabel" placeholder="Name"><input id="uPrefix" class="mono" placeholder="prefix"><input id="uUrl" class="mono" placeholder="https://upstream"><input id="uEnv" class="mono" placeholder="ENV_VAR (opt.)"><input id="uSuffix" class="mono" placeholder="/v1"><select id="uFmt" title="Error shape returned on block"><option value="openai">OpenAI errors</option><option value="anthropic">Anthropic errors</option><option value="gemini">Gemini errors</option></select><button class="btn p" id="uAdd">Add</button></div><div class="err" id="uErr"></div></div>
+      <div class="list" id="ups"></div></div>
+    <p class="sub" style="margin-top:12px">PromptHole forwards your own credentials upstream unchanged. Request bodies are never stored — only rule names, a masked sample and metadata.</p>
+  </section>
+</main></div>
+
+<aside class="drawer" id="dr"></aside>
+
+<script type="module" src="/js/main.js"></script>
+</body></html>
