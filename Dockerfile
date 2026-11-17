@@ -1,5 +1,5 @@
 # PromptHole has no runtime dependencies, so the image is just Node plus the source.
-FROM node:22-alpine
+FROM node:26-alpine
 WORKDIR /app
 COPY package.json rules.default.json server.mjs ./
 COPY src ./src
