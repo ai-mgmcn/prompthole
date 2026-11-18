@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
+import { stopAndRemove } from './stop.mjs';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -50,7 +51,7 @@ before(async () => {
   for (let i = 0; i < 50; i++) { try { if ((await fetch(prompthole + '/api/stats')).ok) return; } catch {} await new Promise((r) => setTimeout(r, 100)); }
   throw new Error('prompthole did not start');
 });
-after(async () => { child?.kill('SIGTERM'); await new Promise((r) => setTimeout(r, 300)); libs?.close(); mock?.close(); fs.rmSync(tmp, { recursive: true, force: true }); });
+after(async () => { libs?.close(); mock?.close(); await stopAndRemove(child, tmp); });
 
 const post = (p, o, h = {}) => fetch(prompthole + p, { method: 'POST', headers: { 'content-type': 'application/json', ...h }, body: JSON.stringify(o) });
 const getRules = async () => (await fetch(prompthole + '/api/rules')).json();
@@ -142,7 +143,7 @@ describe('import', () => {
         const ch = spawn(process.execPath, [path.join(ROOT, 'server.mjs')], { stdio: 'ignore', env: { ...process.env, PROMPTHOLE_PORT: String(p), PROMPTHOLE_DATA: dir, PROMPTHOLE_PRESET_GITLEAKS_URL: `http://127.0.0.1:${libPort}/missing.toml` } });
         for (let i = 0; i < 50; i++) { try { await fetch(`http://127.0.0.1:${p}/api/stats`); break; } catch { await new Promise((r) => setTimeout(r, 100)); } }
         const r = await fetch(`http://127.0.0.1:${p}/api/rules/preview`, { method: 'POST', body: JSON.stringify({ source: 'gitleaks' }) });
-        const j = await r.json(); ch.kill('SIGTERM'); fs.rmSync(dir, { recursive: true, force: true }); resolve({ status: r.status, j });
+        const j = await r.json(); await stopAndRemove(ch, dir); resolve({ status: r.status, j });
       });
     });
     assert.equal(c2.status, 502); assert.match(c2.j.error, /could not download Gitleaks.*404/);

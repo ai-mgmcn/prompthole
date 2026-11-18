@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
+import { stopAndRemove } from './stop.mjs';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -55,7 +56,7 @@ before(async () => {
   for (let i = 0; i < 50; i++) { try { if ((await fetch(prompthole + '/api/stats')).ok) return; } catch {} await new Promise((r) => setTimeout(r, 100)); }
   throw new Error('prompthole did not start');
 });
-after(async () => { child?.kill(); mock?.close(); fs.rmSync(tmp, { recursive: true, force: true }); });
+after(async () => { mock?.close(); await stopAndRemove(child, tmp); });
 
 const post = (p, obj, headers = {}) => fetch(prompthole + p, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: typeof obj === 'string' ? obj : JSON.stringify(obj) });
 const chat = (content, extra = {}) => ({ model: 'm1', messages: [{ role: 'user', content }], ...extra });
@@ -278,7 +279,7 @@ describe('persistence', () => {
       assert.deepEqual(list.map((e) => e.id).sort(), ['a', 'b']);
       // defaults are written on first start
       for (const f of ['rules.json', 'upstreams.json', 'clients.json']) assert.ok(fs.existsSync(path.join(dir, f)), f);
-    } finally { c.kill('SIGTERM'); fs.rmSync(dir, { recursive: true, force: true }); }
+    } finally { await stopAndRemove(c, dir); }
   });
 });
 

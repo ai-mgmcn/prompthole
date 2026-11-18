@@ -8,6 +8,7 @@ import path from 'node:path';
 import net from 'node:net';
 import { Readable } from 'node:stream';
 import { spawn } from 'node:child_process';
+import { stopAndRemove } from './stop.mjs';
 import { fileURLToPath } from 'node:url';
 import { readBody, HttpError } from '../src/http.mjs';
 import { EventLog } from '../src/store.mjs';
@@ -34,7 +35,7 @@ before(async () => {
   for (let i = 0; i < 50; i++) { try { if ((await fetch(prompthole + '/api/stats')).ok) return; } catch {} await new Promise((r) => setTimeout(r, 100)); }
   throw new Error('prompthole did not start');
 });
-after(() => { child?.kill(); mock?.close(); fs.rmSync(tmp, { recursive: true, force: true }); });
+after(async () => { mock?.close(); await stopAndRemove(child, tmp); });
 
 const alive = async () => assert.equal((await fetch(prompthole + '/api/stats')).status, 200);
 

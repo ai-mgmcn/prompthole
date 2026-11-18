@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
+import { stopAndRemove } from './stop.mjs';
 import { fileURLToPath } from 'node:url';
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
@@ -80,7 +81,7 @@ before(async () => {
   for (let i = 0; i < 50; i++) { try { if ((await fetch(prompthole + '/api/stats')).ok) return; } catch {} await sleep(100); }
   throw new Error('prompthole did not start');
 });
-after(async () => { child?.kill('SIGTERM'); await sleep(300); mock?.close(); fs.rmSync(tmp, { recursive: true, force: true }); });
+after(async () => { mock?.close(); await stopAndRemove(child, tmp); });
 
 // event is recorded when the response closes, which can trail the SDK's resolution slightly
 async function lastEvent(provider) {
