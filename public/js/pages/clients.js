@@ -21,9 +21,7 @@ function render() {
 }
 
 async function renderSeen() {
-  const events = await api('/api/events?limit=500'), seen = {};
-  events.forEach((e) => { const ua = (e.headers || {})['user-agent'] || '(none)'; seen[ua] = seen[ua] || { n: 0, tool: e.tool }; seen[ua].n++; });
-  const rows = Object.entries(seen).sort((a, b) => b[1].n - a[1].n).slice(0, 8);
+  const rows = (await api('/api/clients/seen')).map((s) => [s.ua, { n: s.n, tool: s.tool }]);
   $('#seen').innerHTML = rows.length
     ? rows.map(([ua, v], i) => `<div class="item" style="grid-template-columns:1fr 160px 50px auto"><code title="${esc(ua)}">${esc(ua)}</code><span>${esc(v.tool)}</span><span class="num">${v.n}×</span><button class="btn" data-s="${i}">Create rule</button></div>`).join('')
     : '<div class="empty">Nothing yet — send a request through PromptHole.</div>';

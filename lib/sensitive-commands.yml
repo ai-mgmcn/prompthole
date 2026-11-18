@@ -1,0 +1,126 @@
+# PromptHole built-in command library: shell and database commands that are risky when a model asks a tool to run them.
+# This file is also the reference for the command-rules format, so you can write your own and import it from a link or by pasting it.
+#
+# Fields:  name (required) · pattern (required) · match: exact|prefix|contains|regex (default regex)
+#          tool (default *) · action: flag|block · group · note
+# A regex starting with (?i) ignores upper/lower case (used for SQL). Everything here is imported as "flag" unless you choose otherwise.
+#
+# Writing patterns: keep gaps bounded, e.g. [^\n]{0,200} rather than [^\n]*. An unbounded gap can be slow on a very long line.
+rules:
+  # ---- Files ----
+  - name: Recursive delete (rm -r)
+    group: Files
+    pattern: '\brm\b[^\n;&|]{0,200}?\s(-[a-zA-Z]*[rR][a-zA-Z]*|--recursive)(\s|$)'
+    note: Deletes whole directories.
+  - name: Delete everything (rm -rf / or ~)
+    group: Files
+    action: block
+    pattern: '\brm\b(?=[^\n;&|]{0,100}\s(-[a-zA-Z]*[rR][a-zA-Z]*|--recursive)(\s|$))(\s+(-[a-zA-Z]+|--[a-z-]+))*\s+["'']?(/|~/?|\$HOME/?|\$\{HOME\}/?|/\*|~/\*|\*)["'']?(\s|$|[;&|)])'
+    note: Wipes the root, the home directory or the current directory.
+  - name: Write straight to a disk (dd)
+    group: Files
+    pattern: '\bdd\b[^\n]{0,200}\bof=/dev/'
+  - name: Format a filesystem (mkfs)
+    group: Files
+    pattern: '\bmkfs(\.[a-z0-9]+)?\b'
+  - name: Open permissions (chmod 777)
+    group: Files
+    pattern: '\bchmod\s+(-[a-zA-Z]+\s+)*(0?777|a\+rwx)\b'
+  - name: Change ownership recursively (chown -R)
+    group: Files
+    pattern: '\bchown\s+-[a-zA-Z]*R'
+  - name: Shred or wipe files
+    group: Files
+    pattern: '(^|[;&|(]\s*|\bsudo\s+|\bxargs\s+)(shred|wipe|srm)\s'
+
+  # ---- Credentials and data leaving the machine ----
+  - name: Reads credential files
+    group: Credentials
+    pattern: '\b(cat|less|more|head|tail|cp|scp|rsync|base64)\b[^\n]{0,200}(\.env\b|\.ssh/|id_rsa|id_ed25519|\.aws/credentials|\.netrc|\.kube/config|\.docker/config\.json|\.npmrc|\.pypirc)'
+  - name: Prints environment secrets (env / printenv)
+    group: Credentials
+    pattern: '(^|[;&|]\s*)(env|printenv)\s*($|[|;&>])'
+  - name: Reads the macOS keychain or a password store
+    group: Credentials
+    pattern: '\b(security\s+(find|dump)-[a-z-]*password|keychain|pass\s+show|op\s+read|vault\s+read|aws\s+secretsmanager\s+get-secret-value)\b'
+  - name: Uploads a local file (curl)
+    group: Credentials
+    pattern: '\bcurl\b[^\n]{0,300}(\s-d\s*@|--data[a-z-]*[ =]@|\s-F\s|\s-T\s|--upload-file)'
+  - name: Sends data to a raw socket (nc / ncat / socat)
+    group: Credentials
+    pattern: '\b(nc|ncat|netcat|socat)\b\s+[^\n]{0,200}\d'
+  - name: Reverse shell
+    group: Credentials
+    action: block
+    pattern: '(/dev/tcp/|bash\s+-i\s+>&|nc\s+[^\n]{0,100}-e\s+/bin/(ba)?sh|mkfifo\s+/tmp/)'
+
+  # ---- Running remote or privileged code ----
+  - name: Download and run (curl | sh)
+    group: Execution
+    pattern: '\b(curl|wget)\b[^|\n]{0,300}\|\s*(sudo\s+)?(ba|z)?sh\b'
+  - name: Runs as root (sudo)
+    group: Execution
+    pattern: '\bsudo\b'
+  - name: Runs a string as code (eval / base64 -d | sh)
+    group: Execution
+    pattern: '(\beval\s+["$`(]|base64\s+(-d|--decode)[^|\n]{0,200}\|\s*(ba|z)?sh\b)'
+  - name: Installs a package from a URL
+    group: Execution
+    pattern: '\b(pip3?|npm|pnpm|yarn|gem|cargo)\s+(install|add|i)\b[^\n]{0,200}(https?://|git\+|github:)'
+  - name: Changes a scheduled job or login script (crontab / .bashrc)
+    group: Execution
+    pattern: '(\bcrontab\s+(-r|-e|[^-\s])|(>>?|\btee\b(\s+-a)?)\s*~?/?[^\s]{0,200}(\.bashrc|\.zshrc|\.profile|\.bash_profile)\b|/etc/cron)'
+
+  # ---- Git ----
+  - name: Force push
+    group: Git
+    pattern: '\bgit\s+push\b[^\n]{0,200}(\s--force\b|\s-[a-zA-Z]*f[a-zA-Z]*(\s|$)|--force-with-lease|\s\+\S)'
+  - name: Discard all local work (git reset --hard / clean -f)
+    group: Git
+    pattern: '\bgit\s+(reset\s+--hard|clean\s+-[a-zA-Z]*f|checkout\s+((-f|--force)\b|(--\s+)?\.(\s|$|[;&|]))|restore\s+\.(\s|$|[;&|]))'
+  - name: Rewrites history (rebase / filter-branch / amend of pushed work)
+    group: Git
+    pattern: '\bgit\s+(filter-branch|filter-repo|rebase\s+[^\n]{0,100}--root|push\s+[^\n]{0,100}(\s:\S+|\s--delete\b))'
+  - name: Skips safety hooks (--no-verify)
+    group: Git
+    pattern: '\bgit\s+(commit\b[^\n]{0,200}(--no-verify|\s-[a-zA-Z]*n[a-zA-Z]*(\s|$))|push\b[^\n]{0,200}--no-verify)'
+
+  # ---- Databases ----
+  - name: Drops a database object (DROP / TRUNCATE)
+    group: Databases
+    pattern: '(?i)\b(drop\s+(table|database|schema|index|view|user|role|materialized)\b|truncate\s+(table\s+)?[\w."`\[\]]+\s*(;|$))'
+  - name: DELETE without WHERE
+    group: Databases
+    pattern: '(?i)\bdelete\s+from\s+[\w."`\[\]]+\s*(;|$)'
+    note: Removes every row in the table.
+  - name: Flushes a cache or database (FLUSHALL / dropDatabase)
+    group: Databases
+    pattern: '(?i)\b(flushall|flushdb|dropDatabase|db\.dropDatabase)\b'
+
+  # ---- Cloud, containers and infrastructure ----
+  - name: Deletes cloud resources (terraform destroy / aws ... delete)
+    group: Cloud
+    pattern: '\bterraform\b[^\n;&|]{0,80}(\bdestroy\b|-destroy\b|-auto-approve)|\baws\b[^\n;&|]{0,120}?\s(delete-[a-z-]+|terminate-[a-z-]+|remove-[a-z-]+|s3\s+(rb|rm)\b)|\b(gcloud|az)\b[^\n;&|]{0,120}\sdelete\b'
+  - name: Deletes Kubernetes resources
+    group: Cloud
+    pattern: '\bkubectl\b[^\n;&|]{0,80}\s(delete|drain|cordon|replace\s+--force)\b'
+  - name: Removes containers or volumes (docker rm / prune)
+    group: Cloud
+    pattern: '\bdocker(-compose)?\b[^\n;&|]{0,60}\s(system\s+prune|volume\s+(rm|prune)|(container|image|network|builder)\s+prune|rm\s+-f|rmi\s+-f|down\b[^\n;&|]{0,60}(\s-v\b|--volumes))'
+  - name: Runs a privileged container
+    group: Cloud
+    pattern: '\bdocker\s+run\b[^\n]{0,300}(--privileged|-v\s+/:/|--pid=host|docker\.sock)'
+
+  # ---- System ----
+  - name: Stops or reboots the machine
+    group: System
+    pattern: '(^|[;&|(]\s*|\bsudo\s+)(shutdown|reboot|halt|poweroff)\b|\binit\s+[06]\b|\bsystemctl\s+(poweroff|reboot|halt)\b'
+  - name: Kills processes broadly (kill -9 -1 / killall / pkill)
+    group: System
+    pattern: '(^|[;&|(]\s*|\bsudo\s+)(killall|pkill)\b|\bkill\s+-(9|KILL|SIGKILL)\s+-1\b'
+  - name: Changes the firewall or network
+    group: System
+    pattern: '(^|[;&|(]\s*|\bsudo\s+)(iptables|ip6tables|ufw|nft|pfctl)\b|\bifconfig\s+\S+\s+down|\bip\s+link\s+set\s+\S+\s+down'
+  - name: Edits system files (/etc, sudoers, hosts)
+    group: System
+    pattern: '(>>?|\btee\b(\s+-a)?|\bsed\s+-i\b)[^\n]{0,200}(/etc/|sudoers|/boot/)'

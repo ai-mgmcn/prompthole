@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PromptHole</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%236d5ef5%27/%3E%3Ctext x=%2716%27 y=%2723%27 font-family=%27Arial,sans-serif%27 font-size=%2720%27 font-weight=%27700%27 text-anchor=%27middle%27 fill=%27white%27%3EP%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="/css/app.css">
 </head><body>
 <div class="app">
@@ -22,13 +23,13 @@
   <section id="over">
     <div class="grid g5" id="kpis"></div>
     <div class="grid g21" style="margin-top:12px">
-      <div class="card"><div class="ct"><span>Requests · last 60 min</span><span class="faint" id="legend"></span></div><svg id="chart" width="100%" height="120" preserveAspectRatio="none"></svg></div>
-      <div class="card"><div class="ct"><span>Top rules hit</span></div><div id="rulesHit"></div></div>
+      <div class="card"><div class="ct"><span>Requests · last 60 min</span><span class="faint" id="legend"></span></div><svg id="chart" width="100%" height="120" preserveAspectRatio="none"></svg><div class="axis" id="axis"></div></div>
+      <div class="card"><div class="ct"><span>Top rules hit</span><span class="faint win"></span></div><div id="rulesHit"></div></div>
     </div>
     <div class="grid g3" style="margin-top:12px">
-      <div class="card"><div class="ct"><span>By tool</span></div><div id="tools"></div></div>
-      <div class="card"><div class="ct"><span>By provider</span></div><div id="provs"></div></div>
-      <div class="card"><div class="ct"><span>By model</span></div><div id="models"></div></div>
+      <div class="card"><div class="ct"><span>By tool</span><span class="faint win"></span></div><div id="tools"></div></div>
+      <div class="card"><div class="ct"><span>By provider</span><span class="faint win"></span></div><div id="provs"></div></div>
+      <div class="card"><div class="ct"><span>By model</span><span class="faint win"></span></div><div id="models"></div></div>
     </div>
     <div class="grid g2" style="margin-top:12px">
       <div class="card"><div class="ct"><span>Tokens by model</span><span class="faint">in + out</span></div><div id="tokModels"></div></div>
@@ -37,13 +38,32 @@
   </section>
 
   <section id="log" class="hide"><div class="card flush">
-    <table><thead><tr><th>Time</th><th>Tool</th><th>Model</th><th>Action</th><th>Matched</th><th>Status</th><th style="text-align:right">Tokens in / out</th><th style="text-align:right">Size</th><th style="text-align:right">ms</th></tr></thead><tbody id="ev"></tbody></table>
-    <div id="evEmpty" class="empty hide">No requests yet — point a tool at PromptHole (Setup).</div></div></section>
+    <div class="filters"><input id="evQ" placeholder="Search tool, model, rule or command…"><select id="evAct"><option value="">All actions</option><option value="blocked">Blocked</option><option value="masked">Masked</option><option value="logged">Logged</option><option value="allowed">Allowed</option><option value="calls:risky">Commands flagged or blocked</option></select><select id="evRange" title="Which days to load"><option value="1h">Last hour</option><option value="24h" selected>Last 24 hours</option><option value="today">Today</option><option value="7d">Last 7 days</option><option value="30d">Last 30 days</option><option value="all">All time</option><option value="custom">Custom dates…</option></select><span id="evCustom" class="hide" style="display:inline-flex;gap:6px;align-items:center"><input type="date" id="evFrom" title="From"><span class="faint">to</span><input type="date" id="evTo" title="To"></span><select id="evSize" title="Rows per page"><option value="25">25 / page</option><option value="50" selected>50 / page</option><option value="100">100 / page</option><option value="200">200 / page</option></select><span class="sub" id="evCount"></span></div>
+    <div class="err" id="evErr" style="padding:0 14px"></div>
+    <div class="tw"><table><thead><tr><th>Time</th><th>Tool</th><th>Model</th><th>Action</th><th>Matched</th><th>Status</th><th style="text-align:right">Tokens in / out</th><th style="text-align:right">Size</th><th style="text-align:right">ms</th></tr></thead><tbody id="ev"></tbody></table></div>
+    <div id="evEmpty" class="empty hide">No requests yet — point a tool at PromptHole (Setup).</div>
+    <div class="pager hide" id="evPager"><span id="evPages" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center"></span></div>
+    <div class="sub" id="evStore" style="padding:8px 14px 12px"></div></div></section>
 
   <section id="commands" class="hide">
     <div class="card" style="margin-bottom:12px"><div style="display:flex;align-items:center;gap:12px"><div class="sw" id="swInspect"></div><div style="flex:1"><b style="font-weight:500">Inspect tool calls in model responses</b><div class="sub">Lets PromptHole see the commands a model asks your tool to run, and swap blocked ones for a text note so they never execute. Covers Anthropic Messages and OpenAI Chat Completions; OpenAI Responses and Gemini are not inspected yet.</div></div></div></div>
-    <div class="card flush" style="margin-bottom:12px"><div id="bf"></div><div class="list" id="cc"></div></div>
-    <div class="ct" style="margin:16px 2px 8px"><span>Command rules</span></div>
+    <div id="bf"></div>
+    <div class="sub" style="margin:0 2px 12px">To block a command the model asked for, open it from <b>Requests</b>: click a request, then <b>Block…</b> under “Tool calls the model asked for”.</div>
+    <div class="sechead" style="margin-top:16px"><div><b style="font-weight:500">Command rules</b><div class="sub">What happens when the model asks a tool to run something: flag it in the audit view, or block it.</div></div><button class="btn" id="trImp">Import commands…</button></div>
+    <div class="card hide" id="trPanel" style="margin-bottom:12px">
+      <div class="ct"><span>Import command rules</span><button class="btn i" id="trImpX" style="margin-top:-8px">✕</button></div>
+      <div class="form" style="grid-template-columns:1fr auto">
+        <select id="tiSrc">
+          <option value="builtin">Sensitive commands — built in (recursive delete, curl | sh, DROP TABLE, force push, …)</option>
+          <option value="url">From a link — a command-rules file (YAML or JSON)</option>
+          <option value="text">Paste a command-rules file</option>
+        </select>
+        <button class="btn p" id="tiPrev">Preview</button>
+      </div>
+      <div id="tiUrlWrap" class="hide" style="margin-top:8px"><input id="tiUrl" class="mono" placeholder="https://raw.githubusercontent.com/…/commands.yml" style="width:100%"></div>
+      <div id="tiTextWrap" class="hide" style="margin-top:8px"><textarea id="tiText" spellcheck="false" placeholder="rules:&#10;  - name: Force push&#10;    match: regex&#10;    pattern: '\bgit\s+push\b.*--force'&#10;    action: flag"></textarea><div style="display:flex;gap:10px;align-items:center;margin-top:6px"><input type="file" id="tiFile" style="height:auto;padding:4px"><span class="sub">Format: see lib/sensitive-commands.yml</span></div></div>
+      <div id="tiOut" style="margin-top:12px"></div>
+    </div>
     <div class="card flush">
       <div class="formbar"><div class="form" style="grid-template-columns:1.2fr 110px 130px 2fr 90px auto"><input id="trName" placeholder="Name"><input id="trTool" class="mono" value="*" placeholder="tool or *"><select id="trMatch"><option value="prefix">starts with</option><option value="exact">exact command</option><option value="contains">contains</option><option value="regex">regex</option></select><input id="trPat" class="mono" placeholder="Pattern"><select id="trAction"><option value="block">block</option><option value="flag">flag</option></select><button class="btn p" id="trAdd">Add rule</button></div><div class="err" id="trErr"></div></div>
       <div class="list" id="tl"></div></div>
@@ -51,19 +71,22 @@
 
   <section id="rules" class="hide">
     <div class="card" style="margin-bottom:12px"><div style="display:flex;align-items:center;gap:12px"><div class="sw" id="swKeep"></div><div style="flex:1"><b style="font-weight:500">Keep the matched text in logs</b><div class="sub">Stores the exact text that was caught, plus a little context, so you can see what leaked. Hidden until you click Reveal. Local file, owner-readable only.</div></div><button class="btn" id="purge">Purge stored text</button></div><div class="sub" id="purgeMsg" style="margin-top:6px"></div></div>
-    <div style="display:flex;gap:8px;margin-bottom:12px"><input id="rQ" placeholder="Search rules…" style="flex:1"><button class="btn p" id="rImp">Import rules</button></div>
+    <div class="sechead"><div><b style="font-weight:500">Your rules</b><div class="sub">What happens to the text you send: mask it, block the request, or just log it.</div></div><button class="btn" id="rImp">Import from library…</button></div>
+    <input id="rQ" placeholder="Search your rules…" style="width:100%;margin-bottom:12px">
     <div class="card hide" id="imp" style="margin-bottom:12px">
       <div class="ct"><span>Import rules in bulk</span><button class="btn i" id="impX" style="margin-top:-8px">✕</button></div>
       <div class="form" style="grid-template-columns:1fr auto auto">
         <select id="iSrc">
           <option value="gitleaks">Gitleaks — 220+ API key &amp; token patterns (MIT)</option>
           <option value="secrets-db">Secrets Patterns DB — ~880 patterns (CC-BY-SA-4.0)</option>
+          <option value="url">From a link — Gitleaks, Secrets DB or a plain list</option>
           <option value="list">Paste a list of keywords / secrets</option>
           <option value="env">Paste a .env file (its values become rules)</option>
         </select>
         <label class="chip hide" id="iLowWrap" title="Includes ~730 low-confidence patterns that produce many false positives"><input type="checkbox" id="iLow">include low-confidence</label>
         <button class="btn p" id="iPrev">Preview</button>
       </div>
+      <div id="iUrlWrap" class="hide" style="margin-top:8px"><input id="iUrl" class="mono" placeholder="https://raw.githubusercontent.com/…/rules.toml" style="width:100%"><div class="sub" style="margin-top:6px">Public links only. The file is downloaded here, its format is detected, and you see a preview before anything is added. Imported library rules start as “log only”.</div></div>
       <div id="iPaste" class="hide" style="margin-top:8px"><textarea id="iText" spellcheck="false" placeholder=""></textarea><div style="display:flex;gap:10px;align-items:center;margin-top:6px"><input type="file" id="iFile" style="height:auto;padding:4px"><span class="sub" id="iHint"></span></div></div>
       <div id="iOut" style="margin-top:12px"></div>
     </div>

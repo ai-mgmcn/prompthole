@@ -3,6 +3,7 @@ import { api, put, post } from '../http.js';
 
 let R = [], Q = '', S = { storeMatchedText: true };
 const OPEN = new Set(['Custom']);
+const CAP = new Map(), PAGE = 150; // rows rendered per group: a library of 1000+ rules would otherwise create thousands of DOM nodes
 const groupOf = (r) => r.group || 'Custom';
 const inGroup = (g) => R.filter((r) => groupOf(r) === g);
 
@@ -29,9 +30,14 @@ function render() {
     if (q && !shown.length) continue;
     const open = q || OPEN.has(g), on = idx.filter((i) => R[i].enabled).length;
     html += `<div class="item rl grp" data-gh="${esc(g)}"><div class="sw ${on === idx.length ? 'on' : ''}" data-gs="${esc(g)}" title="Turn the whole group on / off"></div><b>${open ? '▾' : '▸'} ${esc(g)}</b><span></span><span class="faint">${idx.length} rules · ${on} on</span><select data-gm="${esc(g)}" title="Set the action for the whole group"><option value="">Set all…</option><option>mask</option><option>block</option><option>log</option></select><button class="btn i" data-gd="${esc(g)}" title="Delete the whole group">${ICON_X}</button></div>`;
-    if (open) html += shown.map((i) => row(R[i], i)).join('');
+    if (open) {
+      const cap = CAP.get(g) || PAGE;
+      html += shown.slice(0, cap).map((i) => row(R[i], i)).join('');
+      if (shown.length > cap) html += `<div class="item more" data-more="${esc(g)}">Show ${Math.min(PAGE * 2, shown.length - cap)} more (${shown.length - cap} not shown)</div>`;
+    }
   }
   $('#rl').innerHTML = html;
+  $$('#rl [data-more]').forEach((e) => e.onclick = () => { CAP.set(e.dataset.more, (CAP.get(e.dataset.more) || PAGE) + PAGE * 2); render(); });
   $$('#rl .pat').forEach((e) => e.onclick = () => e.classList.toggle('open'));
   $$('#rl [data-gh]').forEach((e) => e.onclick = () => { const g = e.dataset.gh; OPEN.has(g) ? OPEN.delete(g) : OPEN.add(g); render(); });
   $$('#rl [data-gs]').forEach((e) => e.onclick = (ev) => { ev.stopPropagation(); const rs = inGroup(e.dataset.gs), allOn = rs.every((r) => r.enabled); rs.forEach((r) => r.enabled = !allOn); save(); });

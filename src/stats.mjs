@@ -1,8 +1,10 @@
 // Aggregations for the dashboard. Pure functions over the event list.
-const tally = (events, key) => { const m = {}; for (const e of events) { const k = key(e); if (k) m[k] = (m[k] || 0) + 1; } return m; };
+// Names come from the network (model, tool, rule names), so these are objects without a prototype: a model called "constructor" is just a name.
+const dict = () => Object.create(null);
+const tally = (events, key) => { const m = dict(); for (const e of events) { const k = key(e); if (k) m[k] = (m[k] || 0) + 1; } return m; };
 
 export function stats(events) {
-  const rules = {};
+  const rules = dict();
   for (const e of events) for (const h of e.hits) rules[h.name] = (rules[h.name] || 0) + h.count;
 
   const now = Date.now();
@@ -12,7 +14,7 @@ export function stats(events) {
     if (i >= 0 && i < 60) { series[i].total++; if (e.action !== 'allowed') series[i].flagged++; }
   }
 
-  const tokens = { in: 0, out: 0, cacheRead: 0, cacheWrite: 0, reasoning: 0, requests: 0 }, tokensByModel = {}, tokensByTool = {};
+  const tokens = { in: 0, out: 0, cacheRead: 0, cacheWrite: 0, reasoning: 0, requests: 0 }, tokensByModel = dict(), tokensByTool = dict();
   for (const e of events) {
     if (!e.tokens) continue;
     tokens.requests++; tokens.in += e.tokens.in; tokens.out += e.tokens.out; tokens.cacheRead += e.tokens.cacheRead;
@@ -33,7 +35,7 @@ export function stats(events) {
 
 // how often each command rule fired, for the Commands page
 export function toolRuleCounts(events) {
-  const counts = {};
+  const counts = dict();
   for (const e of events) for (const c of e.calls || []) {
     if (!c.rule) continue;
     const k = (counts[c.rule] ||= { blocked: 0, flagged: 0 });

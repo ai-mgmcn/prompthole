@@ -34,7 +34,12 @@ main{padding:20px 32px 48px;width:100%;max-width:2000px;min-width:0}
 h2{font-size:16px;font-weight:600;margin:0;letter-spacing:-.01em}
 .sub{color:var(--mut);font-size:12px}
 .grid{display:grid;gap:12px}.g5{grid-template-columns:repeat(5,minmax(0,1fr))}.g2{grid-template-columns:repeat(2,minmax(0,1fr))}.g4{grid-template-columns:repeat(4,minmax(0,1fr))}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}.g21{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
-@media(max-width:900px){.app{grid-template-columns:1fr}aside{display:none}.g5,.g4,.g3,.g2,.g21{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:900px){.app{grid-template-columns:1fr}.g5,.g4,.g3,.g2,.g21{grid-template-columns:repeat(2,minmax(0,1fr))}
+  /* the sidebar becomes a top bar (it is the only navigation); the request drawer keeps working */
+  aside:not(.drawer){position:static;height:auto;flex-direction:row;align-items:center;gap:12px;padding:8px 12px;border-right:0;border-bottom:1px solid var(--line);overflow-x:auto}
+  aside:not(.drawer) .side-foot,aside:not(.drawer) .tog{display:none}
+  aside:not(.drawer) nav{flex-direction:row}
+  main{padding:16px}}
 .s-ok{color:var(--ok)}.s-bad{color:var(--bad)}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--rc);padding:16px}
 .card.flush{padding:0;overflow:hidden}
@@ -42,13 +47,19 @@ h2{font-size:16px;font-weight:600;margin:0;letter-spacing:-.01em}
 .kpi .v{font-size:24px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:28px}
 .kpi .d{font-size:12px;color:var(--faint);margin-top:2px}
 .bar{display:grid;grid-template-columns:110px 1fr 36px;align-items:center;gap:10px;height:26px}
+.bar.lg{grid-template-columns:150px 1fr 40px}
+.ic{display:inline-flex;align-items:center;gap:7px;max-width:100%;vertical-align:middle}
+.ic>span:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ico{width:16px;height:16px;flex:none;border-radius:4px;background:#fff;padding:1px;box-sizing:border-box;object-fit:contain;display:block}
+.ico.mono{display:flex;align-items:center;justify-content:center;padding:0;color:#fff;font-size:10px;font-weight:700;line-height:1}
 .bar .l{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bar .t{height:6px;background:var(--panel2);border-radius:9px;overflow:hidden}.bar .t i{display:block;height:100%;background:var(--acc);border-radius:9px}
 .bar .n{color:var(--mut);text-align:right;font-variant-numeric:tabular-nums}
 .none{color:var(--faint);height:26px;display:flex;align-items:center}
 table{width:100%;border-collapse:collapse}
 th{height:34px;padding:0 14px;text-align:left;font-size:11px;font-weight:500;color:var(--faint);border-bottom:1px solid var(--line);white-space:nowrap}
-td{height:38px;padding:0 14px;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(420px,32vw)}
+td{height:38px;padding:0 14px;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(210px,26vw)}
+.tw{overflow-x:auto}.tw table{min-width:820px} /* wide tables scroll inside their card instead of being cut off */
 tbody tr:last-child td{border-bottom:0}
 tbody tr.click{cursor:pointer}tbody tr.click:hover{background:var(--panel2)}
 .num{font-variant-numeric:tabular-nums;font-family:var(--mono);font-size:12px;color:var(--mut)}
@@ -110,7 +121,18 @@ pre{margin:0;white-space:pre-wrap;font:12px/1.5 var(--mono);color:var(--mut)}
 /* commands page */
 .flagged{color:var(--warn);background:#fbbf241a}
 .tc{grid-template-columns:34px minmax(110px,1fr) 70px minmax(0,2.4fr) 100px 90px 32px}
-.cc{grid-template-columns:96px minmax(110px,.8fr) minmax(0,3fr) 96px 90px}
-.cc code{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
-.cc code.open{white-space:pre-wrap;word-break:break-all}
-.blockform{padding:12px 14px;border-bottom:1px solid var(--line);background:var(--panel2)}
+.blockform{padding:12px 14px;margin-bottom:12px;border:1px solid var(--acc);border-radius:var(--rc);background:var(--panel2)}
+.item.hl{animation:hl 2.4s ease}@keyframes hl{0%,60%{background:#6366f133}100%{background:transparent}}
+.callrow{display:flex;gap:8px;align-items:center;min-height:34px}.callrow code{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* filters, paging, status */
+.filters{display:flex;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line);align-items:center;flex-wrap:wrap}
+.filters input{flex:1 1 200px;min-width:160px;max-width:360px}
+.filters input[type=date]{flex:none;width:136px;max-width:none}
+.btn:disabled{opacity:.4;cursor:default}
+.pager .btn{min-width:32px;padding:0 8px}
+.pager{display:flex;justify-content:center;align-items:center;gap:12px;padding:12px;border-top:1px solid var(--line);color:var(--faint);font-size:12px}
+.item.more{cursor:pointer;color:var(--acc2);justify-content:center;text-align:center;display:flex}
+.item.more:hover{background:var(--panel2)}
+.sechead{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:4px 2px 12px}
+#evErr:empty{display:none}
+.axis{display:flex;justify-content:space-between;margin-top:6px;color:var(--faint);font-size:11px;font-variant-numeric:tabular-nums}

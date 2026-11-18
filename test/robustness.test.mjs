@@ -104,7 +104,7 @@ describe('review fixes', () => {
   const put = (p, b) => fetch(prompthole + p, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) });
   const up = (prefix) => ({ id: prefix, label: prefix, prefix, url: 'http://127.0.0.1:9', env: '', suffix: '', format: 'openai' });
   test('upstream prefixes that would shadow the dashboard are rejected', async () => {
-    for (const p of ['api', 'js', 'css']) assert.equal((await put('/api/upstreams', [up(p)])).status, 400, p);
+    for (const p of ['api', 'js', 'css', 'icons']) assert.equal((await put('/api/upstreams', [up(p)])).status, 400, p);
   });
   test('malformed URLs are a 404, not a 500', async () => {
     assert.equal((await fetch(prompthole + '/%')).status, 404);

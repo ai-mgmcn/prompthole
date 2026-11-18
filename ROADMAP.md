@@ -38,6 +38,11 @@ expose it to a network until the first three items are done.
 ## Quality and project
 
 - [ ] Browser end-to-end test of the dashboard. 🟢
+- [ ] Proxy WebSocket upgrades (OpenAI Realtime).
+- [ ] Export the audit trail (CSV / JSON for a date range).
+- [ ] Tamper-evident audit files (a hash chain across records).
+- [ ] Forward audit records to syslog or a webhook, for central log platforms.
+- [ ] A faster index for audit days with millions of requests.
 - [ ] Windows testing and an install guide. 🟢
 - [ ] Publish a Docker image from CI on release.
 - [ ] Final project name (PromptHole is a placeholder).

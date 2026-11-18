@@ -31,6 +31,7 @@ Use `PROMPTHOLE_DATA=/tmp/prompthole-dev` to keep experiments away from your rea
 | Matching, tokens, client detection | `lib/core.mjs` | `test/core.test.mjs` |
 | Tool-call audit / blocking | `lib/toolcalls.mjs` (+ `src/inspect.mjs` for a new API shape) | `test/toolcalls.test.mjs`, `test/commands.test.mjs` |
 | New HTTP endpoint | `src/api.mjs` | `test/gateway.test.mjs` |
+| Anything that runs user regexes | keep it in the scan worker (`src/scan-worker.mjs`), never on the main thread over unbounded input | `test/scale.test.mjs` |
 | Dashboard page | `public/js/pages/*.js`, register in `public/js/main.js` | `test/ui.test.mjs` |
 
 A page is `{ id, title, init?, load(first) }`. Add the tab button and `<section id="…">` to `public/index.html`.

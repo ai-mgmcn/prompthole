@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
-    "test": "node --test test/*.test.mjs",
-    "test:coverage": "node --test --experimental-test-coverage --test-coverage-lines=95 test/*.test.mjs"
+    "test": "node --test --test-timeout=120000 test/*.test.mjs",
+    "test:coverage": "node --test --test-timeout=120000 --experimental-test-coverage --test-coverage-lines=95 test/*.test.mjs"
   },
   "engines": {
     "node": ">=22"

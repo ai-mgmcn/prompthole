@@ -4,8 +4,8 @@ import { createProxy } from './proxy.mjs';
 import { createApi } from './api.mjs';
 import { createStatic } from './static.mjs';
 
-export function createApp({ store, config }) {
-  const proxy = createProxy(store), api = createApi({ store, config }), serveStatic = createStatic(config.publicDir);
+export function createApp({ store, config, pool }) {
+  const proxy = createProxy(store, { pool, config }), api = createApi({ store, config, pool }), serveStatic = createStatic(config.publicDir);
   return async function handle(req, res) {
     try {
       const url = new URL(req.url, 'http://x');
@@ -17,7 +17,7 @@ export function createApp({ store, config }) {
       if (serveStatic(req, res, url.pathname)) return;
       json(res, 404, { error: 'not found' });
     } catch (e) {
-      if (!res.headersSent) { if (e instanceof HttpError) json(res, e.status, { error: e.message }); else json(res, 500, { error: 'internal error' }); } else res.end();
+      if (!res.headersSent) { if (e instanceof HttpError) { if (e.status === 413) res.setHeader('connection', 'close'); json(res, e.status, { error: e.message }); } else json(res, 500, { error: 'internal error' }); } else res.end();
     }
   };
 }
